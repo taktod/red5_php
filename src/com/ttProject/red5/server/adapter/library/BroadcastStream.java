@@ -62,279 +62,282 @@ import org.slf4j.LoggerFactory;
  */
 public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnectionListener
 {
-  /** Listeners to get notified about received packets. */
-  private Set<IStreamListener> mListeners = new CopyOnWriteArraySet<IStreamListener>();
-  final private Logger log = LoggerFactory.getLogger(this.getClass());
+	/** Listeners to get notified about received packets. */
+	private Set<IStreamListener> mListeners = new CopyOnWriteArraySet<IStreamListener>();
+	final private Logger log = LoggerFactory.getLogger(this.getClass());
 
-  private String mPublishedName;
-  private IPipe mLivePipe;
-  private IScope mScope;
+	private String mPublishedName;
+	private IPipe mLivePipe;
+	private IScope mScope;
 
-  // Codec handling stuff for frame dropping
-  private StreamCodecInfo mCodecInfo;
-  private Long mCreationTime;
+	// Codec handling stuff for frame dropping
+	private StreamCodecInfo mCodecInfo;
+	private Long mCreationTime;
 
-  public BroadcastStream(String name)
-  {
-    mPublishedName = name;
-    mLivePipe = null;
-    log.trace("name: {}", name);
+	public BroadcastStream(String name)
+	{
+		mPublishedName = name;
+		mLivePipe = null;
+		log.trace("name: {}", name);
 
-    // we want to create a video codec when we get our
-    // first video packet.
-    mCodecInfo = new StreamCodecInfo();
-    mCreationTime = null;
-  }
-
-  @Override
-public IProvider getProvider()
-  {
-    log.trace("getProvider()");
-    return this;
-  }
-
-  @Override
-public String getPublishedName()
-  {
-    log.trace("getPublishedName()");
-    return mPublishedName;
-  }
-
-  @Override
-public String getSaveFilename()
-  {
-    log.trace("getSaveFilename()");
-    throw new Error("unimplemented method");
-  }
-
-  @Override
-public void addStreamListener(IStreamListener listener)
-  {
-    log.trace("addStreamListener(listener: {})", listener);
-    mListeners.add(listener);
-  }
-
-  @Override
-public Collection<IStreamListener> getStreamListeners()
-  {
-    log.trace("getStreamListeners()");
-    return mListeners;
-  }
-
-  @Override
-public void removeStreamListener(IStreamListener listener)
-  {
-    log.trace("removeStreamListener({})", listener);
-    mListeners.remove(listener);
-  }
-
-  @Override
-public void saveAs(String filePath, boolean isAppend)
-  		throws IOException, ResourceNotFoundException, ResourceExistException
-  {
-    log.trace("saveAs(filepath:{}, isAppend:{})", filePath, isAppend);
-    throw new Error("unimplemented method");
-  }
-
-  @Override
-public void setPublishedName(String name)
-  {
-    log.trace("setPublishedName(name:{})", name);
-    mPublishedName = name;
-  }
-
-  @Override
-public void close()
-  {
-//	   mLivePipe.unsubscribe(this.getProvider());
-    log.trace("close()");
-  }
-
-  @Override
-public IStreamCodecInfo getCodecInfo()
-  {
-    log.trace("getCodecInfo()");
-    // we don't support this right now.
-    return mCodecInfo;
-  }
-
-  @Override
-public String getName()
-  {
-    log.trace("getName(): {}", mPublishedName);
-    // for now, just return the published name
-    return mPublishedName;
-  }
-
-  public void setScope(IScope scope)
-  {
-    mScope = scope;
-  }
-
-  @Override
-public IScope getScope()
-  {
-    log.trace("getScope(): {}", mScope);
-    return mScope;
-  }
-
-  @Override
-public void start()
-  {
-	  Status status = new Status(Status.NS_PLAY_PUBLISHNOTIFY);
-	  StatusMessage smessage = new StatusMessage();
-	  smessage.setBody(status);
-	  try {
-		mLivePipe.pushMessage(smessage);
-	} catch (IOException e) {
-		e.printStackTrace();
+		// we want to create a video codec when we get our
+		// first video packet.
+		mCodecInfo = new StreamCodecInfo();
+		mCreationTime = null;
 	}
-//	this.mLivePipe.subscribe(getProvider(), new HashMap<String, Object>() {{put("play", "start");}});
-    log.trace("start()");
-  }
 
-  @Override
-public void stop()
-  {
-	  // unscribeを送る。(とめることはできるが、始めることができない。)
-//      this.mLivePipe.unsubscribe(this.getProvider());
+	@Override
+	public IProvider getProvider()
+	{
+		log.trace("getProvider()");
+		return this;
+	}
+
+	@Override
+	public String getPublishedName()
+	{
+		log.trace("getPublishedName()");
+		return mPublishedName;
+	}
+
+	@Override
+	public String getSaveFilename()
+	{
+		log.trace("getSaveFilename()");
+		throw new Error("unimplemented method");
+	}
+
+	@Override
+	public void addStreamListener(IStreamListener listener)
+	{
+		log.trace("addStreamListener(listener: {})", listener);
+		mListeners.add(listener);
+	}
+
+	@Override
+	public Collection<IStreamListener> getStreamListeners()
+	{
+		log.trace("getStreamListeners()");
+		return mListeners;
+	}
+
+	@Override
+	public void removeStreamListener(IStreamListener listener)
+	{
+		log.trace("removeStreamListener({})", listener);
+		mListeners.remove(listener);
+	}
+
+	@Override
+	public void saveAs(String filePath, boolean isAppend)
+		throws IOException, ResourceNotFoundException, ResourceExistException
+	{
+		log.trace("saveAs(filepath:{}, isAppend:{})", filePath, isAppend);
+		throw new Error("unimplemented method");
+	}
+
+	@Override
+	public void setPublishedName(String name)
+	{
+		log.trace("setPublishedName(name:{})", name);
+		mPublishedName = name;
+	}
+
+	@Override
+	public void close()
+	{
+//		mLivePipe.unsubscribe(this.getProvider());
+		log.trace("close()");
+	}
+	public boolean close(int i) {
+		if(mLivePipe != null) {
+			
+		}
+		return true;
+	}
+
+	@Override
+	public IStreamCodecInfo getCodecInfo()
+	{
+		log.trace("getCodecInfo()");
+		// we don't support this right now.
+		return mCodecInfo;
+	}
+
+	@Override
+	public String getName()
+	{
+		log.trace("getName(): {}", mPublishedName);
+		// for now, just return the published name
+		return mPublishedName;
+	}
+
+	public void setScope(IScope scope)
+	{
+		mScope = scope;
+	}
+
+	@Override
+	public IScope getScope()
+	{
+		log.trace("getScope(): {}", mScope);
+		return mScope;
+	}
+
+	@Override
+	public void start()
+	{
+		Status status = new Status(Status.NS_PLAY_PUBLISHNOTIFY);
+		StatusMessage smessage = new StatusMessage();
+		smessage.setBody(status);
+		try {
+			mLivePipe.pushMessage(smessage);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+//		this.mLivePipe.subscribe(getProvider(), new HashMap<String, Object>() {{put("play", "start");}});
+		log.trace("start()");
+	}
+
+	@Override
+	public void stop()
+	{
+		// unscribeを送る。(とめることはできるが、始めることができない。)
+//		this.mLivePipe.unsubscribe(this.getProvider());
       
-      // notifyを送る。
-	  Status status = new Status(Status.NS_PLAY_UNPUBLISHNOTIFY);
-	  StatusMessage smessage = new StatusMessage();
-	  smessage.setBody(status);
-	  try {
-		mLivePipe.pushMessage(smessage);
-	} catch (IOException e) {
-		e.printStackTrace();
+		// notifyを送る。
+		Status status = new Status(Status.NS_PLAY_UNPUBLISHNOTIFY);
+		StatusMessage smessage = new StatusMessage();
+		smessage.setBody(status);
+		try {
+			mLivePipe.pushMessage(smessage);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// BroadcastCloseイベントをおくっておく。
+		// XXX mLivePipeから何人視聴している状態か確認して、視聴しているユーザーがいる間は、closeしても内部の動作をとめないようにしておく。
+		// これでうまくいけそう。
+//		System.out.println(mLivePipe.getConsumers().size()); (接続人数を取得できる。)
+		log.trace("stop");
 	}
-	// BroadcastCloseイベントをおくっておく。
-	// XXX mLivePipeから何人視聴している状態か確認して、視聴しているユーザーがいる間は、closeしても内部の動作をとめないようにしておく。
-	// これでうまくいけそう。
-//	System.out.println(mLivePipe.getConsumers().size()); (接続人数を取得できる。)
-    log.trace("stop");
-  }
 
-  @Override
-public void onOOBControlMessage(IMessageComponent source, IPipe pipe,
-      OOBControlMessage oobCtrlMsg)
-  {
-    log.trace("onOOBControlMessage");
-  }
+	@Override
+	public void onOOBControlMessage(IMessageComponent source, IPipe pipe,
+			OOBControlMessage oobCtrlMsg)
+	{
+		log.trace("onOOBControlMessage");
+	}
 
-  @Override
-public void onPipeConnectionEvent(PipeConnectionEvent event)
-  {
-    log.trace("onPipeConnectionEvent(event:{})", event);
-    switch (event.getType())
-    {
-    case PipeConnectionEvent.PROVIDER_CONNECT_PUSH:
-      if (event.getProvider() == this
-          && (event.getParamMap() == null || !event.getParamMap()
-              .containsKey("record")))
-      {
-        this.mLivePipe = (IPipe) event.getSource();
-      }
-      break;
-    case PipeConnectionEvent.PROVIDER_DISCONNECT:
-      if (this.mLivePipe == event.getSource())
-      {
-    	// これでunpublishedがいくようになった？
-        this.mLivePipe.unsubscribe(this.getProvider());
-      }
-      break;
-    case PipeConnectionEvent.CONSUMER_CONNECT_PUSH:
-    	System.out.println("connect push");
-      break;
-    case PipeConnectionEvent.CONSUMER_DISCONNECT:
-      System.out.println("disconnect");
-      break;
-    default:
-      break;
-    }
-  }
+	@Override
+	public void onPipeConnectionEvent(PipeConnectionEvent event)
+	{
+		log.trace("onPipeConnectionEvent(event:{})", event);
+		switch (event.getType())
+		{
+		case PipeConnectionEvent.PROVIDER_CONNECT_PUSH:
+			if (event.getProvider() == this
+				&& (event.getParamMap() == null || !event.getParamMap().containsKey("record")))
+			{
+				this.mLivePipe = (IPipe) event.getSource();
+			}
+			break;
+		case PipeConnectionEvent.PROVIDER_DISCONNECT:
+			if (this.mLivePipe == event.getSource())
+			{
+				// これでunpublishedがいくようになった？
+				this.mLivePipe.unsubscribe(this.getProvider());
+			}
+			break;
+		case PipeConnectionEvent.CONSUMER_CONNECT_PUSH:
+			System.out.println("connect push");
+			break;
+		case PipeConnectionEvent.CONSUMER_DISCONNECT:
+			System.out.println("disconnect");
+			break;
+		default:
+			break;
+		}
+	}
 
-  public void dispatchEvent(IEvent event)
-  {
-    try {
-      log.trace("dispatchEvent(event:{})", event);
-      if (event instanceof IRTMPEvent)
-      {
-        IRTMPEvent rtmpEvent = (IRTMPEvent) event;
-        if (mLivePipe != null)
-        {
-      	  RTMPMessage msg = RTMPMessage.build(rtmpEvent);
-//          RTMPMessage msg = new RTMPMessage();
-//          msg.setBody(rtmpEvent);
+	public void dispatchEvent(IEvent event)
+	{
+		try {
+			log.trace("dispatchEvent(event:{})", event);
+			if (event instanceof IRTMPEvent)
+			{
+				IRTMPEvent rtmpEvent = (IRTMPEvent) event;
+				if (mLivePipe != null)
+				{
+					RTMPMessage msg = RTMPMessage.build(rtmpEvent);
+					//RTMPMessage msg = new RTMPMessage();
+					//msg.setBody(rtmpEvent);
 
-      	  if (mCreationTime == null)
-            mCreationTime = (long)rtmpEvent.getTimestamp();
-          try
-          {
-            if (event instanceof AudioData)
-            {
-              mCodecInfo.setHasAudio(true);
-              // 本来ならここでオーディオデータも取得する必要があるが、Red5がAudioデータにきちんと対処していないので、データが抜け落ちている。
-            }
-            else if (event instanceof VideoData)
-            {
-              IVideoStreamCodec videoStreamCodec = null;
-              if (mCodecInfo.getVideoCodec() == null)
-              {
-                videoStreamCodec = VideoCodecFactory.getVideoCodec(((VideoData) event).getData());
-                mCodecInfo.setVideoCodec(videoStreamCodec);
-              } else if (mCodecInfo != null) {
-                videoStreamCodec = mCodecInfo.getVideoCodec();
-              }
+					if (mCreationTime == null)
+						mCreationTime = (long)rtmpEvent.getTimestamp();
+					try
+					{
+						if (event instanceof AudioData)
+						{
+							mCodecInfo.setHasAudio(true);
+							// 本来ならここでオーディオデータも取得する必要があるが、Red5がAudioデータにきちんと対処していないので、データが抜け落ちている。
+						}
+						else if (event instanceof VideoData)
+						{
+							IVideoStreamCodec videoStreamCodec = null;
+							if (mCodecInfo.getVideoCodec() == null)
+							{
+								videoStreamCodec = VideoCodecFactory.getVideoCodec(((VideoData) event).getData());
+								mCodecInfo.setVideoCodec(videoStreamCodec);
+							} else if (mCodecInfo != null) {
+								videoStreamCodec = mCodecInfo.getVideoCodec();
+							}
 
-              if (videoStreamCodec != null) {
-                videoStreamCodec.addData(((VideoData) rtmpEvent).getData());
-              }
+							if (videoStreamCodec != null) {
+								videoStreamCodec.addData(((VideoData) rtmpEvent).getData());
+							}
 
-              if (mCodecInfo!= null) {
-                mCodecInfo.setHasVideo(true);
-              }
+							if (mCodecInfo!= null) {
+								mCodecInfo.setHasVideo(true);
+							}
+						}
+						mLivePipe.pushMessage(msg);
 
-            }
-            mLivePipe.pushMessage(msg);
+						// Notify listeners about received packet
+						if (rtmpEvent instanceof IStreamPacket)
+						{
+							for (IStreamListener listener : getStreamListeners())
+							{
+								try
+								{
+									listener.packetReceived(this, (IStreamPacket) rtmpEvent);
+								}
+								catch (Exception e)
+								{
+									log.error("Error while notifying listener " + listener, e);
+								}
+							}
+						}
+					}
+					catch (IOException ex)
+					{
+						// ignore
+						log.error("Got exception: {}", ex);
+					}
+				}
+			}
+		} finally {
+		}
+	}
 
-            // Notify listeners about received packet
-            if (rtmpEvent instanceof IStreamPacket)
-            {
-              for (IStreamListener listener : getStreamListeners())
-              {
-                try
-                {
-                  listener.packetReceived(this, (IStreamPacket) rtmpEvent);
-                }
-                catch (Exception e)
-                {
-                  log.error("Error while notifying listener " + listener, e);
-                }
-              }
-            }
+	@Override
+	public long getCreationTime()
+	{
+		return mCreationTime != null ? mCreationTime : 0L;
+	}
 
-          }
-          catch (IOException ex)
-          {
-            // ignore
-            log.error("Got exception: {}", ex);
-          }
-        }
-      }
-    } finally {
-    }
-  }
-
-  @Override
-public long getCreationTime()
-  {
-    return mCreationTime != null ? mCreationTime : 0L;
-  }
-
-  @Override
-  public Notify getMetaData()
-  {
-    return null;
-  }
+	@Override
+	public Notify getMetaData()
+	{
+		return null;
+	}
 }
