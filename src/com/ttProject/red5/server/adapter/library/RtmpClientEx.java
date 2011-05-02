@@ -21,9 +21,9 @@ import org.red5.server.stream.IStreamData;
  * Class to connect other rtmp server.
  */
 public class RtmpClientEx extends RTMPClient{
-	private String host;
+	private String server;
 	private int port;
-	private String app;
+	private String application;
 	private String name;
 	private RTMPConnection conn;
 	private Integer streamId = null;
@@ -32,18 +32,18 @@ public class RtmpClientEx extends RTMPClient{
 	public RtmpClientEx() {
 	}
 	/**
-	 * @param host
+	 * @param server
 	 * @param port
-	 * @param app
+	 * @param application
 	 * @param name
 	 * @param listener
 	 */
-	public RtmpClientEx(String host, int port, String app, String name,
+	public RtmpClientEx(String server, int port, String application, String name,
 			IRtmpClientEx listener) {
 		super();
-		this.host = host;
+		this.server = server;
 		this.port = port;
-		this.app = app;
+		this.application = application;
 		this.name = name;
 		this.listener = listener;
 	}
@@ -51,13 +51,13 @@ public class RtmpClientEx extends RTMPClient{
 	 * @return the host
 	 */
 	public String getHost() {
-		return host;
+		return server;
 	}
 	/**
 	 * @param host the host to set
 	 */
 	public void setHost(String host) {
-		this.host = host;
+		this.server = host;
 	}
 	/**
 	 * @return the port
@@ -74,15 +74,15 @@ public class RtmpClientEx extends RTMPClient{
 	/**
 	 * @return the app
 	 */
-	public String getApp() {
-		return app;
+	public String getApplication() {
+		return application;
 	}
 	/**
-	 * @param app the app to set
+	 * @param application the app to set
 	 * app/room
 	 */
-	public void setApp(String app) {
-		this.app = app;
+	public void setApplication(String application) {
+		this.application = application;
 	}
 	/**
 	 * @return the name
@@ -116,10 +116,10 @@ public class RtmpClientEx extends RTMPClient{
 	}
 
 	public void connect() {
-		this.connect(host, port, app);
+		this.connect(server, port, application);
 	}
 	public void connect(Object[] params) {
-		this.connect(host, port, makeDefaultConnectionParams(host, port, app), null, params);
+		this.connect(server, port, makeDefaultConnectionParams(server, port, application), null, params);
 	}
 	@Override
 	public void connect(String server, int port,

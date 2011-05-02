@@ -27,7 +27,33 @@ import com.ttProject.red5.server.adapter.library.BroadcastStream;
  * アプリケーションが始まったら対象サーバーに接続しようとする。
  */
 public class ApplicationAdapterEx extends ApplicationAdapter {
-//	IBroadcastStream outputStream = null;
+	// アプリケーションの接続先は一定になってるものとする。
+	@SuppressWarnings("unused")
+	private String server;
+	@SuppressWarnings("unused")
+	private int port;
+	@SuppressWarnings("unused")
+	private String application;
+	
+	/**
+	 * @param server the server to set
+	 */
+	public void setServer(String server) {
+		this.server = server;
+	}
+	/**
+	 * @param port the port to set
+	 */
+	public void setPort(int port) {
+		this.port = port;
+	}
+	/**
+	 * @param application the application to set
+	 */
+	public void setApplication(String application) {
+		this.application = application;
+	}
+	// データのセットする処理は
 	@Override
 	public boolean appStart(IScope scope) {
 		final IScope scopeex = scope;
