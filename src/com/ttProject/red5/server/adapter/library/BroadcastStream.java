@@ -44,9 +44,11 @@ import org.red5.server.net.rtmp.event.AudioData;
 import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.net.rtmp.event.Notify;
 import org.red5.server.net.rtmp.event.VideoData;
+import org.red5.server.net.rtmp.status.Status;
 import org.red5.server.stream.VideoCodecFactory;
 import org.red5.server.stream.codec.StreamCodecInfo;
 import org.red5.server.stream.message.RTMPMessage;
+import org.red5.server.stream.message.StatusMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -144,6 +146,7 @@ public void setPublishedName(String name)
   @Override
 public void close()
   {
+//	   mLivePipe.unsubscribe(this.getProvider());
     log.trace("close()");
   }
 
@@ -178,12 +181,37 @@ public IScope getScope()
   @Override
 public void start()
   {
+	  Status status = new Status(Status.NS_PLAY_PUBLISHNOTIFY);
+	  StatusMessage smessage = new StatusMessage();
+	  smessage.setBody(status);
+	  try {
+		mLivePipe.pushMessage(smessage);
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+//	this.mLivePipe.subscribe(getProvider(), new HashMap<String, Object>() {{put("play", "start");}});
     log.trace("start()");
   }
 
   @Override
 public void stop()
   {
+	  // unscribeを送る。(とめることはできるが、始めることができない。)
+//      this.mLivePipe.unsubscribe(this.getProvider());
+      
+      // notifyを送る。
+	  Status status = new Status(Status.NS_PLAY_UNPUBLISHNOTIFY);
+	  StatusMessage smessage = new StatusMessage();
+	  smessage.setBody(status);
+	  try {
+		mLivePipe.pushMessage(smessage);
+	} catch (IOException e) {
+		e.printStackTrace();
+	}
+	// BroadcastCloseイベントをおくっておく。
+	// XXX mLivePipeから何人視聴している状態か確認して、視聴しているユーザーがいる間は、closeしても内部の動作をとめないようにしておく。
+	// これでうまくいけそう。
+//	System.out.println(mLivePipe.getConsumers().size()); (接続人数を取得できる。)
     log.trace("stop");
   }
 
@@ -211,12 +239,15 @@ public void onPipeConnectionEvent(PipeConnectionEvent event)
     case PipeConnectionEvent.PROVIDER_DISCONNECT:
       if (this.mLivePipe == event.getSource())
       {
-        this.mLivePipe = null;
+    	// これでunpublishedがいくようになった？
+        this.mLivePipe.unsubscribe(this.getProvider());
       }
       break;
     case PipeConnectionEvent.CONSUMER_CONNECT_PUSH:
+    	System.out.println("connect push");
       break;
     case PipeConnectionEvent.CONSUMER_DISCONNECT:
+      System.out.println("disconnect");
       break;
     default:
       break;
@@ -243,6 +274,7 @@ public void onPipeConnectionEvent(PipeConnectionEvent event)
             if (event instanceof AudioData)
             {
               mCodecInfo.setHasAudio(true);
+              // 本来ならここでオーディオデータも取得する必要があるが、Red5がAudioデータにきちんと対処していないので、データが抜け落ちている。
             }
             else if (event instanceof VideoData)
             {
