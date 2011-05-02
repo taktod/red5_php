@@ -1,5 +1,6 @@
 package com.ttProject.red5.server.adapter;
 
+import static org.red5.server.api.ScopeUtils.getScopeService;
 import java.util.List;
 
 import org.red5.server.adapter.ApplicationAdapter;
@@ -11,10 +12,12 @@ import org.red5.server.api.scheduling.ISchedulingService;
 import org.red5.server.api.stream.IBroadcastStream;
 import org.red5.server.api.stream.IStreamListener;
 import org.red5.server.api.stream.IStreamPacket;
+import org.red5.server.api.stream.IStreamService;
 import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.stream.BroadcastScope;
 import org.red5.server.stream.IBroadcastScope;
 import org.red5.server.stream.IProviderService;
+import org.red5.server.stream.StreamService;
 
 import com.ttProject.red5.server.adapter.library.BroadcastStream;
 
@@ -24,47 +27,47 @@ import com.ttProject.red5.server.adapter.library.BroadcastStream;
  * アプリケーションが始まったら対象サーバーに接続しようとする。
  */
 public class ApplicationAdapterEx extends ApplicationAdapter {
+//	IBroadcastStream outputStream = null;
 	@Override
 	public boolean appStart(IScope scope) {
-		final ApplicationAdapterEx aaex = this;
 		final IScope scopeex = scope;
-		System.out.println("appStart!!!!!!");
 		this.addScheduledJob(10000, new IScheduledJob() {
 			@Override
 			public void execute(ISchedulingService service)
 					throws CloneNotSupportedException {
-				// 10秒ごとに、対象サーバーに接続を実施する。
-				List<String> list = aaex.getBroadcastStreamNames(scopeex);
+				List<String> list = getBroadcastStreamNames(scopeex);
 				for(String name : list) {
-					System.out.println(name);
+					IBroadcastStream stream = getPublishStream(scopeex, name);
+					if(stream instanceof BroadcastStream) {
+						((BroadcastStream) stream).terminateGhostConnection();
+					}
 				}
 			}
 		});
 		return super.appStart(scope);
 	}
-	private BroadcastStream outputStream = null;
 	@Override
 	public void streamBroadcastStart(IBroadcastStream stream) {
-//		System.out.println(stream.getCodecInfo().getAudioCodecName());
-//		System.out.println(stream.getCodecInfo().getVideoCodecName());
 		// 内部接続するときに[付きでアクセスしたら外したのにミラーリングする。
 		String publishName = stream.getPublishedName();
 		if(publishName.startsWith("[")) {
-			if(outputStream == null) {
-			// ミラーリング用のストリームを生成しておく。
 			String outputName = publishName.substring(1);
-			IScope scope = stream.getScope();
-			outputStream = new BroadcastStream(outputName);
-			outputStream.setScope(scope);
-			
-			IProviderService providerService = (IProviderService) this.getContext().getBean(IProviderService.BEAN_NAME);
-			if(providerService.registerBroadcastStream(scope, outputName, outputStream)) {
-				IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(scope, outputName, true);
-				bsScope.setAttribute(IBroadcastScope.STREAM_ATTRIBUTE, outputStream);
-			}
-			else {
-				throw new RuntimeException("Failed to make mirroring scope");
-			}
+			IBroadcastStream outputStream = getPublishStream(stream.getScope(), outputName);
+			if(outputStream == null) {
+				// ミラーリング用のストリームを生成しておく。
+				IScope scope = stream.getScope();
+				outputStream = new BroadcastStream(outputName);
+				((BroadcastStream)outputStream).setScope(scope);
+				
+				IProviderService providerService = (IProviderService) this.getContext().getBean(IProviderService.BEAN_NAME);
+				System.out.println(providerService);
+				if(providerService.registerBroadcastStream(scope, outputName, outputStream)) {
+					IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(scope, outputName, true);
+					bsScope.setAttribute(IBroadcastScope.STREAM_ATTRIBUTE, outputStream);
+				}
+				else {
+					throw new RuntimeException("Failed to make mirroring scope");
+				}
 			}
 			outputStream.start();
 			stream.addStreamListener(new IStreamListener() {
@@ -73,8 +76,14 @@ public class ApplicationAdapterEx extends ApplicationAdapter {
 					// TODO Auto-generated method stub
 					if(packet instanceof IRTMPEvent) {
 						//System.out.println("this is IRTMPevent");
-						// これをBroadcastにDispatchして別のストリームとして再生させる。
-						outputStream.dispatchEvent((IEvent)packet);
+						try {
+							IBroadcastStream bstream = getPublishStream(stream.getScope(), stream.getPublishedName().substring(1));
+							// これをBroadcastにDispatchして別のストリームとして再生させる。
+							((BroadcastStream)bstream).dispatchEvent((IEvent)packet);
+						}
+						catch(Exception e) {
+							
+						}
 					}
 				}
 			});
@@ -86,29 +95,35 @@ public class ApplicationAdapterEx extends ApplicationAdapter {
 	public void streamBroadcastClose(IBroadcastStream stream) {
 		// 放送を停止したときに、自分につながっているサーバー宛に放送が停止したことを通知する。
 		String publishName = stream.getPublishedName();
-		System.out.println(publishName);
 		if(publishName.startsWith("[")) {
-			outputStream.stop();
-			// すでにこの放送をみている全員が視聴できなくする必要あり。
-//			Status unpublished = new Status(StatusCodes.NS_PLAY_UNPUBLISHNOTIFY);
-//			StatusMessage unpublishedMsg = new StatusMessage();
-//			unpublishedMsg.setBody(unpublished);
-//			outputStream.onPipeConnectionEvent(event)
-
-			// unpublish notifyをunsubscribeをいれても、次のBroadcastStreamをつくるとこわれるっぽい。
-			// 継承されるストリームも停止させる。(ほかのユーザーが接続していない場合は停止させてOK)
-/*			String outputName = publishName.substring(1);
-			IProviderService providerService = (IProviderService) this.getContext().getBean(IProviderService.BEAN_NAME);
-			IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(scope, outputName, true);
-			bsScope.removeAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
-			providerService.unregisterBroadcastStream(stream.getScope(), outputName, outputStream);
-			outputStream.stop();
-			outputStream.close();
-			outputStream = null;// */
+			IBroadcastStream bstream = getPublishStream(stream.getScope(), publishName.substring(1));
+			if(stream instanceof BroadcastStream) {
+				bstream.stop();
+			}
 		}
 		super.streamBroadcastClose(stream);
 	}
 	public String streamEvent(IConnection conn, Object[] params) {
 		return "";
+	}
+	public IBroadcastStream getPublishStream(IScope scope, String name) {
+		if(!getBroadcastStreamNames(scope).contains(name)) {
+			return null;
+		}
+		IProviderService providerService = (IProviderService) scope.getContext().getBean(IProviderService.BEAN_NAME);
+		IBroadcastScope bs = (BroadcastScope)providerService.getLiveProviderInput(scope, name, true);
+		return (IBroadcastStream)bs.getAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
+	}
+	@Override
+	public IBroadcastStream getBroadcastStream(IScope scope, String name) {
+		if(!getBroadcastStreamNames(scope).contains(name)) {
+			return null;
+		}
+		IStreamService service = (IStreamService) getScopeService(scope, IStreamService.class, StreamService.class);
+		if (!(service instanceof StreamService)) {
+			return null;
+		}
+		IBroadcastScope bs = ((StreamService) service).getBroadcastScope(scope, name);
+		return (IBroadcastStream) bs.getAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
 	}
 }

@@ -45,6 +45,9 @@ import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.net.rtmp.event.Notify;
 import org.red5.server.net.rtmp.event.VideoData;
 import org.red5.server.net.rtmp.status.Status;
+import org.red5.server.stream.BroadcastScope;
+import org.red5.server.stream.IBroadcastScope;
+import org.red5.server.stream.IProviderService;
 import org.red5.server.stream.VideoCodecFactory;
 import org.red5.server.stream.codec.StreamCodecInfo;
 import org.red5.server.stream.message.RTMPMessage;
@@ -146,14 +149,22 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 	@Override
 	public void close()
 	{
-//		mLivePipe.unsubscribe(this.getProvider());
-		log.trace("close()");
+		log.trace("close");
 	}
-	public boolean close(int i) {
-		if(mLivePipe != null) {
-			
+	public void terminateGhostConnection() {
+		if(mLivePipe.getConsumers().size() != 0) {
+			// まだつながっているユーザーが存在するため、このままおいておく。
+			System.out.println(mLivePipe.getConsumers().size());
+			return;
 		}
-		return true;
+		// 誰も接続していないので、データを削除する。
+		IProviderService providerService = (IProviderService)mScope.getContext().getBean(IProviderService.BEAN_NAME);
+		IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(mScope, mPublishedName, true);
+		bsScope.removeAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
+		providerService.unregisterBroadcastStream(mScope, mPublishedName);
+		System.out.println(providerService);
+
+		log.trace("close()");
 	}
 
 	@Override
