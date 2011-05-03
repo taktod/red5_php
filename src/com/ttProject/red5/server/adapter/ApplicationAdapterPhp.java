@@ -24,9 +24,18 @@ import com.ttProject.red5.server.adapter.library.ArgumentManager;
  */
 public class ApplicationAdapterPhp extends ApplicationAdapter {
 	private QuercusEx quercus;
+	private String directory;
 	public ApplicationAdapterPhp() {
 		quercus = new QuercusEx();
+		directory = null;
 	}
+	/**
+	 * @param directory the directory to set
+	 */
+	public void setDirectory(String directory) {
+		this.directory = directory;
+	}
+
 	@Override
 	public boolean appConnect(IConnection conn, Object[] params) {
 		if(!super.appConnect(conn, params)) {
@@ -35,7 +44,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, conn, params);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appConnect.php", key);
+			quercus.execute(directory + "/php/appConnect.php", key);
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -51,7 +60,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void appDisconnect(IConnection conn) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appDisconnect.php", args.setArgument(this, conn));
+			quercus.execute(directory + "/php/appDisconnect.php", args.setArgument(this, conn));
 		}
 		catch(IOException e) {
 			e.printStackTrace();
@@ -66,7 +75,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, client, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appJoin.php", key);
+			quercus.execute(directory + "/php/appJoin.php", key);
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -81,7 +90,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void appLeave(IClient client, IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appLeave.php", args.setArgument(this, client, scope));
+			quercus.execute(directory + "/php/appLeave.php", args.setArgument(this, client, scope));
 		}
 		catch (IOException e) {
 			e.printStackTrace();
@@ -96,7 +105,10 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appStart.php", key);
+			if(directory == null) {
+				directory = "webapps/" + this.getName() + "/WEB-INF/";
+			}
+			quercus.execute(directory + "/php/appStart.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -110,7 +122,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void appStop(IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/appStop.php", args.setArgument(this, scope));
+			quercus.execute(directory + "/php/appStop.php", args.setArgument(this, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -125,7 +137,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, conn, scope, params);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/connect.php", key);
+			quercus.execute(directory + "/php/connect.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -139,7 +151,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public synchronized void disconnect(IConnection conn, IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/disconnect.php", args.setArgument(this, conn, scope));
+			quercus.execute(directory + "/php/disconnect.php", args.setArgument(this, conn, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -153,7 +165,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, client, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/join.php", key);
+			quercus.execute(directory + "/php/join.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -167,7 +179,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public synchronized void leave(IClient client, IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/leave.php", args.setArgument(this, client, scope));
+			quercus.execute(directory + "/php/leave.php", args.setArgument(this, client, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -181,7 +193,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/start.php", key);
+			quercus.execute(directory + "/php/start.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -195,7 +207,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public synchronized void stop(IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/stop.php", args.setArgument(this, scope));
+			quercus.execute(directory + "/php/stop.php", args.setArgument(this, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -209,7 +221,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, conn, params);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomConnect.php", key);
+			quercus.execute(directory + "/php/roomConnect.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -223,7 +235,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void roomDisconnect(IConnection conn) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomDisconnect.php", args.setArgument(this, conn));
+			quercus.execute(directory + "/php/roomDisconnect.php", args.setArgument(this, conn));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -237,7 +249,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, client, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomJoin.php", key);
+			quercus.execute(directory + "/php/roomJoin.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -251,7 +263,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void roomLeave(IClient client, IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomLeave.php", args.setArgument(this, client, scope));
+			quercus.execute(directory + "/php/roomLeave.php", args.setArgument(this, client, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -265,7 +277,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(this, scope);
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomStart.php", key);
+			quercus.execute(directory + "/php/roomStart.php", key);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -279,7 +291,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void roomStop(IScope scope) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/roomStop.php", args.setArgument(this, scope));
+			quercus.execute(directory + "/php/roomStop.php", args.setArgument(this, scope));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -290,7 +302,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		super.streamBroadcastStart(stream);
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/streamBroadcastStart.php", args.setArgument(this, stream));
+			quercus.execute(directory + "/php/streamBroadcastStart.php", args.setArgument(this, stream));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -299,7 +311,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void streamBroadcastClose(IBroadcastStream stream) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/streamBroadcastClose.php", args.setArgument(this, stream));
+			quercus.execute(directory + "/php/streamBroadcastClose.php", args.setArgument(this, stream));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -310,7 +322,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		super.streamPublishStart(stream);
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/streamPublishStart.php", args.setArgument(this, stream));
+			quercus.execute(directory + "/php/streamPublishStart.php", args.setArgument(this, stream));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -320,7 +332,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		super.streamRecordStart(stream);
 		ArgumentManager args = ArgumentManager.getInstance();
 		try {
-			quercus.execute("webapps/" + this.getName() + "/WEB-INF/php/streamRecordStart.php", args.setArgument(this, stream));
+			quercus.execute(directory + "/php/streamRecordStart.php", args.setArgument(this, stream));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

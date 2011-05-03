@@ -50,3 +50,11 @@ This program is for newest red5 program.
 // RTMPMessage msg = RTMPMessage.build(rtmpEvent);
 <br />RTMPMessage msg = new RTMPMessage();
 <br />msg.setBody(rtmpEvent);
+
+## ディレクトリ指定をApplicationAdapterPhpのBeanに追加しました。 / add the directory property for ApplicationAdapterPhp
+red5-web.xmlのweb.handlerのbean指定にdirectoryのPropertyを指定してください。(存在しない場合はWEB-INF/php以下になります。)
+<pre>
+        <bean id="web.handler" class="com.ttProject.red5.server.adapter.ApplicationAdapterPhp">
+                <property name="directory" value="/home/red5/" />
+        </bean>
+</pre>
