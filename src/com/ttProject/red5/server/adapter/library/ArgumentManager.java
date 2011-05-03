@@ -54,4 +54,14 @@ public class ArgumentManager {
 	public void setRetval(String key, Object retval) {
 		this.retval.put(key, retval);
 	}
+	public String toByteString(Object o) {
+		byte[] bytes = o.toString().getBytes();
+		StringBuilder bs = new StringBuilder();
+		String hex;
+		for(byte b : bytes) {
+			hex = Integer.toHexString(b);
+			bs.append(hex.substring(hex.length() - 2));
+		}
+		return bs.toString();
+	}
 }

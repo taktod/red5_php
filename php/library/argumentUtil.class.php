@@ -30,10 +30,15 @@ class ArgumentUtil {
 		}
 		return $this->args[$index];
 	}
-	public function getIoBufferAsString($index) {
+	public function getJavaString($java_string) {
+		$arg_manager = ArgumentManager::getInstance();
+		$string = $arg_manager->toByteString($java_string);
+		return pach("H*", $string);
+	}
+/*	public function getIoBufferAsString($index) {
 		if($index >= count($this->args)) {
 			return null;
 		}
 		return trim(new String($this->args[$index]->array()));
-	}
+	}// */
 }
