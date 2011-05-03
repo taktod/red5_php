@@ -35,7 +35,6 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void setDirectory(String directory) {
 		this.directory = directory;
 	}
-
 	@Override
 	public boolean appConnect(IConnection conn, Object[] params) {
 		if(!super.appConnect(conn, params)) {

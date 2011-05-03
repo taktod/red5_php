@@ -1,5 +1,6 @@
 package com.ttProject.red5.server.adapter.library;
 
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.WeakHashMap;
 
@@ -55,7 +56,10 @@ public class ArgumentManager {
 		this.retval.put(key, retval);
 	}
 	public String toByteString(Object o) {
-		byte[] bytes = o.toString().getBytes();
+		if(o == null) {
+			return "null";
+		}
+		byte[] bytes = o.toString().getBytes(Charset.forName("UTF8"));
 		StringBuilder bs = new StringBuilder();
 		String hex;
 		for(byte b : bytes) {
