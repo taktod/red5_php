@@ -13,14 +13,16 @@ This is how to write red5 application with PHP(querccus).
 1. phpExt.jarをred5のpluginディレクトリに設置する。
 2. quercusのjarファイルをpluginディレクトリに設置する。(javamail-141.jar, inject-16.jar, resin.jar)
 3. webapps/{application}/WEB-INF/php以下にphpディレクトリのプログラムを設置する。
-4. red5を起動する。
+4. -Dfile.encoding=UTF8をred5.shに追加する。
+5. red5を起動する。
 
 <br />
 
 1. put phpExt.jar on [red5_hone]/plugins/
 2. put the quercus jar files on plugin directories.(javamail-141.jar, inject-16.jar, resin.jar)
 3. put the php programs on webapps/{application}/WEB-INF/php
-4. execute red5.sh
+4. -Dfile.encoding=UTF8, add this on the java start script(red5.sh)
+5. execute red5.sh
 
 ## required Jar libraries.
 inject-16.jar
