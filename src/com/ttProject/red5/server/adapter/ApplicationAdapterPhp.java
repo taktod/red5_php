@@ -17,7 +17,7 @@ import com.caucho.quercus.page.QuercusPage;
 import com.caucho.vfs.Path;
 import com.caucho.vfs.StdoutStream;
 import com.caucho.vfs.WriteStream;
-import com.ttProject.red5.server.adapter.library.ArgumentManager;
+import com.ttProject.red5.server.adapter.library.php.ArgumentManager;
 
 /**
  * Application adapter for PHP usage.
@@ -34,6 +34,12 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	 */
 	public void setDirectory(String directory) {
 		this.directory = directory;
+	}
+	/**
+	 * @return the env
+	 */
+	public Env getEnv() {
+		return quercus.getEnv();
 	}
 	@Override
 	public boolean appConnect(IConnection conn, Object[] params) {
@@ -340,12 +346,21 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	 * private quercus class for php engine.
 	 */
 	private class QuercusEx extends Quercus {
+		private Env env;
 		private String arg = "";
 		public QuercusEx() {
 			super();
 			this.init();
 			this.start();
 		}
+		
+		/**
+		 * @return the env
+		 */
+		public Env getEnv() {
+			return env;
+		}
+
 		public void execute(String path, String arg)
 				throws IOException{
 			this.setFileName(path);
@@ -361,7 +376,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 		    os.setNewlineString("\n");
 		    os.setEncoding("UTF-8");
 
-		    Env env = createEnv(page, os, null, null);
+		    env = createEnv(page, os, null, null);
 		    env.setGlobalValue("_JAVAARG", objectToValue(arg));
 		    env.start();
 

@@ -18,7 +18,7 @@
  * 
  * I Change some of this library to use stream reflection. (taktod)
  *******************************************************************************/
-package com.ttProject.red5.server.adapter.library;
+package com.ttProject.red5.server.adapter.library.edge;
 
 import java.io.IOException;
 import java.util.Collection;

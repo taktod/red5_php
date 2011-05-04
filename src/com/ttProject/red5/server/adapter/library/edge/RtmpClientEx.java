@@ -1,4 +1,4 @@
-package com.ttProject.red5.server.adapter.library;
+package com.ttProject.red5.server.adapter.library.edge;
 
 import java.util.Map;
 

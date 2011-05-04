@@ -3,8 +3,8 @@ package com.ttProject;
 import org.red5.server.api.event.IEvent;
 import org.red5.server.api.service.IServiceCall;
 
-import com.ttProject.red5.server.adapter.library.IRtmpClientEx;
-import com.ttProject.red5.server.adapter.library.RtmpClientEx;
+import com.ttProject.red5.server.adapter.library.edge.IRtmpClientEx;
+import com.ttProject.red5.server.adapter.library.edge.RtmpClientEx;
 
 public class RcexListener implements IRtmpClientEx {
 	private RtmpClientEx rcex;

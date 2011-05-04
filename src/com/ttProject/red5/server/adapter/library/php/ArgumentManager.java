@@ -1,4 +1,4 @@
-package com.ttProject.red5.server.adapter.library;
+package com.ttProject.red5.server.adapter.library.php;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class ArgumentManager {
 	}
 	public String toByteString(Object o) {
 		if(o == null) {
-			return "null";
+			return null;
 		}
 		byte[] bytes = o.toString().getBytes(Charset.forName("UTF8"));
 		StringBuilder bs = new StringBuilder();

@@ -1,4 +1,4 @@
-package com.ttProject.red5.server.adapter.library;
+package com.ttProject.red5.server.adapter.library.edge;
 
 import org.red5.server.api.event.IEvent;
 import org.red5.server.api.service.IServiceCall;

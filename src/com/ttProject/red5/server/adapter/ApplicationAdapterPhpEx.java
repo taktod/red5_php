@@ -15,7 +15,7 @@ import com.caucho.quercus.page.QuercusPage;
 import com.caucho.vfs.Path;
 import com.caucho.vfs.StdoutStream;
 import com.caucho.vfs.WriteStream;
-import com.ttProject.red5.server.adapter.library.ArgumentManager;
+import com.ttProject.red5.server.adapter.library.php.ArgumentManager;
 
 public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	private QuercusEx quercus;

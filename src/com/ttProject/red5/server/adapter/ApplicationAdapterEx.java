@@ -19,7 +19,7 @@ import org.red5.server.stream.IBroadcastScope;
 import org.red5.server.stream.IProviderService;
 import org.red5.server.stream.StreamService;
 
-import com.ttProject.red5.server.adapter.library.BroadcastStream;
+import com.ttProject.red5.server.adapter.library.edge.BroadcastStream;
 
 /**
  * アプリケーションを起動したら、どこかのサーバーにつながって、そのサーバーのメッセージをうけとって、必要のあるアプリケーション相手に接続を実施する。
