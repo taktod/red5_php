@@ -30,6 +30,25 @@ inject-16.jar
 <br />resin.jar
 <br />(すべてQuercusのダウンロードページのwarファイルより入手 / please download from quercus project. war archive does have them.)
 
+## required Jar libraries for compile.
+javaee-api-5.1.2.jar from red5
+<br />log4j-over-slf4j.1.6.1.jar from red5
+<br />logback-classic-0.9.26.jar from red5
+<br />logback-core-0.9.26.jar from red5
+<br />mina-core-2.0.3.jar from red5
+<br />inject-16.jar from Quercus
+<br />javamail-141.jar from Quercus
+<br />resin.jar from Quercus
+<br />red5.jar from red5
+<br />com.springsource.slf4j.api-1.6.1.jar from red5
+<br />org.springframework.context-3.0.5.RELEASE.jar from red5
+<br />org.springframework.beans-3.0.5.RELEASE.jar from red5
+<br />org.springframework.core-3.0.5.RELEASE.jar from red5
+<br />bcprov.jdk16-145.jar from red5
+<br />ehcache-2.2.0.jar from red5
+<br />commons-beanutils-1.8.2.jar from red5
+<br />com.springsource.org.apache.commons.collections-3.2.1.jar from red5
+
 ## 注意 / note
 このプログラムで使われているBroadcastStream.javaのデータは最新のRed5のプログラムに対応させてあります。
 <br />古いサーバーの場合はBroadcastStream.javaの以下の部分を修正して、アーカイブしなおしてください。
