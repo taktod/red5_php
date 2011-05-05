@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.red5.server.api.IClient;
 import org.red5.server.api.IConnection;
 import org.red5.server.api.IScope;
+import org.red5.server.api.stream.IBroadcastStream;
 
 import com.caucho.quercus.Quercus;
 import com.caucho.quercus.QuercusDieException;
@@ -15,28 +16,34 @@ import com.caucho.quercus.page.QuercusPage;
 import com.caucho.vfs.Path;
 import com.caucho.vfs.StdoutStream;
 import com.caucho.vfs.WriteStream;
+
 import com.ttProject.red5.server.adapter.library.php.ArgumentManager;
 
 public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	private QuercusEx quercus;
+	private String directory;
 	public ApplicationAdapterPhpEx() {
 		quercus = new QuercusEx();
+		directory = null;
+	}
+	/**
+	 * @param directory the directory to set
+	 */
+	public void setDirectory(String directory) {
+		this.directory = directory;
+	}
+	/**
+	 * @return the env
+	 */
+	public Env getEnv() {
+		return quercus.getEnv();
 	}
 	@Override
 	public boolean appConnect(IConnection conn, Object[] params) {
 		if(!super.appConnect(conn, params)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, conn, params);
-		try {
-			quercus.execute("php/appConnect.php", key);
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("appConnect.php", this, conn, params);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -44,13 +51,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void appDisconnect(IConnection conn) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/appDisconnect.php", args.setArgument(this, conn));
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-		}
+		execute("appDisconnect.php", this, conn);
 		super.appDisconnect(conn);
 	}
 	@Override
@@ -58,15 +59,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.appJoin(client, scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, client, scope);
-		try {
-			quercus.execute("php/appJoin.php", key);
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("appJoin.php", this, client, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -74,13 +67,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void appLeave(IClient client, IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/appLeave.php", args.setArgument(this, client, scope));
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("appLeave.php", this, client, scope);
 		super.appLeave(client, scope);
 	}
 	@Override
@@ -88,14 +75,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.appStart(scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, scope);
-		try {
-			quercus.execute("php/appStart.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("appStart.php", this, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -103,12 +83,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void appStop(IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/appStop.php", args.setArgument(this, scope));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("appStop.php", this, scope);
 		super.appStop(scope);
 	}
 	@Override
@@ -117,15 +92,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.connect(conn, scope, params)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, conn, scope, params);
-		try {
-			quercus.execute("php/connect.php", key);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("connect.php", this, conn, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -133,12 +100,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public synchronized void disconnect(IConnection conn, IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/disconnect.php", args.setArgument(this, conn, scope));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("disconnect.php", this, conn, scope);
 		super.disconnect(conn, scope);
 	}
 	@Override
@@ -146,14 +108,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.join(client, scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, client, scope);
-		try {
-			quercus.execute("php/join.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("join.php", this, client, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -161,12 +116,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public synchronized void leave(IClient client, IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/leave.php", args.setArgument(this, client, scope));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("leave.php", this, client, scope);
 		super.leave(client, scope);
 	}
 	@Override
@@ -174,14 +124,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.start(scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, scope);
-		try {
-			quercus.execute("php/start.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("start.php", this, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -189,12 +132,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public synchronized void stop(IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/stop.php", args.setArgument(this, scope));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("stop.php", this.scope);
 		super.stop(scope);
 	}
 	@Override
@@ -202,14 +140,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.roomConnect(conn, params)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, conn, params);
-		try {
-			quercus.execute("php/roomConnect.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("roomConnect.php", this, conn, params);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -217,12 +148,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void roomDisconnect(IConnection conn) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/roomDisconnect.php", args.setArgument(this, conn));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("roomDisconnect.php", this, conn);
 		super.roomDisconnect(conn);
 	}
 	@Override
@@ -230,14 +156,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.roomJoin(client, scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, client, scope);
-		try {
-			quercus.execute("php/roomJoin.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("roomJoin.php", this, client, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -245,12 +164,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void roomLeave(IClient client, IScope scope) {
-		ArgumentManager args = ArgumentManager.getInstance();
-		try {
-			quercus.execute("php/roomLeave.php", args.setArgument(this, client, scope));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		execute("roomLeave.php", this, client, scope);
 		super.roomLeave(client, scope);
 	}
 	@Override
@@ -258,14 +172,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		if(!super.roomStart(scope)) {
 			return false;
 		}
-		ArgumentManager args = ArgumentManager.getInstance();
-		String key = args.setArgument(this, scope);
-		try {
-			quercus.execute("php/roomStart.php", key);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		Object retval = args.getRetval(key);
+		Object retval = execute("roomStart.php", this, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -273,24 +180,59 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 	}
 	@Override
 	public void roomStop(IScope scope) {
+		execute("roomStop.php", this, scope);
+		super.roomStop(scope);
+	}
+	@Override
+	public void streamBroadcastStart(IBroadcastStream stream) {
+		super.streamBroadcastStart(stream);
+		execute("streamBroadcastStart.php", this, stream);
+	}
+	@Override
+	public void streamBroadcastClose(IBroadcastStream stream) {
+		execute("streamBroadcastClose.php", this, stream);
+		super.streamBroadcastClose(stream);
+	}
+	@Override
+	public void streamPublishStart(IBroadcastStream stream) {
+		super.streamPublishStart(stream);
+		execute("streamPublishStart.php", this, stream);
+	}
+	@Override
+	public void streamRecordStart(IBroadcastStream stream) {
+		super.streamRecordStart(stream);
+		execute("streamRecordStart.php", this, stream);
+	}
+	protected Object execute(String phpfile, Object ... params) {
 		ArgumentManager args = ArgumentManager.getInstance();
+		String key = args.setArgument(params);
 		try {
-			quercus.execute("php/roomStop.php", args.setArgument(this, scope));
-		} catch (IOException e) {
+			quercus.execute(directory + "/php/" + phpfile, key);
+		}
+		catch(IOException e) {
 			e.printStackTrace();
 		}
-		super.roomStop(scope);
+		return args.getRetval(key);
 	}
 	/**
 	 * private quercus class for php engine.
 	 */
 	private class QuercusEx extends Quercus {
+		private Env env;
 		private String arg = "";
 		public QuercusEx() {
 			super();
 			this.init();
 			this.start();
 		}
+		
+		/**
+		 * @return the env
+		 */
+		public Env getEnv() {
+			return env;
+		}
+
 		public void execute(String path, String arg)
 				throws IOException{
 			this.setFileName(path);
@@ -306,7 +248,7 @@ public class ApplicationAdapterPhpEx extends ApplicationAdapterEx {
 		    os.setNewlineString("\n");
 		    os.setEncoding("UTF-8");
 
-		    Env env = createEnv(page, os, null, null);
+		    env = createEnv(page, os, null, null);
 		    env.setGlobalValue("_JAVAARG", objectToValue(arg));
 		    env.start();
 
