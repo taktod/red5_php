@@ -10,9 +10,11 @@ import org.red5.server.api.event.IEvent;
 import org.red5.server.api.scheduling.IScheduledJob;
 import org.red5.server.api.scheduling.ISchedulingService;
 import org.red5.server.api.stream.IBroadcastStream;
+import org.red5.server.api.stream.IPlayItem;
 import org.red5.server.api.stream.IStreamListener;
 import org.red5.server.api.stream.IStreamPacket;
 import org.red5.server.api.stream.IStreamService;
+import org.red5.server.api.stream.ISubscriberStream;
 import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.stream.BroadcastScope;
 import org.red5.server.stream.IBroadcastScope;
@@ -152,4 +154,43 @@ public class ApplicationAdapterEx extends ApplicationAdapter {
 		IBroadcastScope bs = ((StreamService) service).getBroadcastScope(scope, name);
 		return (IBroadcastStream) bs.getAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
 	}
+
+/*	@Override
+	public void streamPlayItemPause(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		System.out.println("streamPlayItemPause");
+		// TODO Auto-generated method stub
+		super.streamPlayItemPause(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemPlay(ISubscriberStream stream, IPlayItem item,
+			boolean isLive) {
+		System.out.println("streamPlayItemPlay");
+		System.out.println(this.getName()); // アプリケーション名
+		System.out.println(stream.getScope().getContextPath()); // これがroomのパスっぽい
+		System.out.println(item.getName()); // 放送の名前を取得することができる。
+		// scopeにattributeとしてRtmpClientExをつけるようにしておく。
+		// TODO Auto-generated method stub
+		super.streamPlayItemPlay(stream, item, isLive);
+	}
+	@Override
+	public void streamPlayItemResume(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		System.out.println("streamPlayItemResume");
+		// TODO Auto-generated method stub
+		super.streamPlayItemResume(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemSeek(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		System.out.println("streamPlayItemSeek");
+		// TODO Auto-generated method stub
+		super.streamPlayItemSeek(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemStop(ISubscriberStream arg0, IPlayItem arg1) {
+		System.out.println("streamPlayItemStop");
+		// TODO Auto-generated method stub
+		super.streamPlayItemStop(arg0, arg1);
+	}*/
 }

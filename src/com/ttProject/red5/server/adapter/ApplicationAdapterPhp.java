@@ -9,6 +9,8 @@ import org.red5.server.api.IClient;
 import org.red5.server.api.IConnection;
 import org.red5.server.api.IScope;
 import org.red5.server.api.stream.IBroadcastStream;
+import org.red5.server.api.stream.IPlayItem;
+import org.red5.server.api.stream.ISubscriberStream;
 
 import com.caucho.quercus.Quercus;
 import com.caucho.quercus.QuercusDieException;
@@ -48,7 +50,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.appConnect(conn, params)) {
 			return false;
 		}
-		Object retval = execute("appConnect.php", this, conn, params);
+		Object retval = execute("app/appConnect.php", this, conn, params);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -56,7 +58,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void appDisconnect(IConnection conn) {
-		execute("appDisconnect.php", this, conn);
+		execute("app/appDisconnect.php", this, conn);
 		super.appDisconnect(conn);
 	}
 	@Override
@@ -64,7 +66,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.appJoin(client, scope)) {
 			return false;
 		}
-		Object retval = execute("appJoin.php", this, client, scope);
+		Object retval = execute("app/appJoin.php", this, client, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -72,7 +74,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void appLeave(IClient client, IScope scope) {
-		execute("appLeave.php", this, client, scope);
+		execute("app/appLeave.php", this, client, scope);
 		super.appLeave(client, scope);
 	}
 	@Override
@@ -80,7 +82,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.appStart(scope)) {
 			return false;
 		}
-		Object retval = execute("appStart.php", this, scope);
+		Object retval = execute("app/appStart.php", this, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -88,7 +90,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void appStop(IScope scope) {
-		execute("appStop.php", this, scope);
+		execute("app/appStop.php", this, scope);
 		super.appStop(scope);
 	}
 	@Override
@@ -145,7 +147,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.roomConnect(conn, params)) {
 			return false;
 		}
-		Object retval = execute("roomConnect.php", this, conn, params);
+		Object retval = execute("room/roomConnect.php", this, conn, params);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -153,7 +155,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void roomDisconnect(IConnection conn) {
-		execute("roomDisconnect.php", this, conn);
+		execute("room/roomDisconnect.php", this, conn);
 		super.roomDisconnect(conn);
 	}
 	@Override
@@ -161,7 +163,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.roomJoin(client, scope)) {
 			return false;
 		}
-		Object retval = execute("roomJoin.php", this, client, scope);
+		Object retval = execute("room/roomJoin.php", this, client, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -169,7 +171,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void roomLeave(IClient client, IScope scope) {
-		execute("roomLeave.php", this, client, scope);
+		execute("room/roomLeave.php", this, client, scope);
 		super.roomLeave(client, scope);
 	}
 	@Override
@@ -177,7 +179,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		if(!super.roomStart(scope)) {
 			return false;
 		}
-		Object retval = execute("roomStart.php", this, scope);
+		Object retval = execute("room/roomStart.php", this, scope);
 		if(retval instanceof Boolean) {
 			return (Boolean)retval;
 		}
@@ -185,28 +187,57 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 	}
 	@Override
 	public void roomStop(IScope scope) {
-		execute("roomStop.php", this, scope);
+		execute("room/roomStop.php", this, scope);
 		super.roomStop(scope);
 	}
 	@Override
 	public void streamBroadcastStart(IBroadcastStream stream) {
 		super.streamBroadcastStart(stream);
-		execute("streamBroadcastStart.php", this, stream);
+		execute("publish/streamBroadcastStart.php", this, stream);
 	}
 	@Override
 	public void streamBroadcastClose(IBroadcastStream stream) {
-		execute("streamBroadcastClose.php", this, stream);
+		execute("publish/streamBroadcastClose.php", this, stream);
 		super.streamBroadcastClose(stream);
 	}
 	@Override
 	public void streamPublishStart(IBroadcastStream stream) {
 		super.streamPublishStart(stream);
-		execute("streamPublishStart.php", this, stream);
+		execute("publish/streamPublishStart.php", this, stream);
 	}
 	@Override
 	public void streamRecordStart(IBroadcastStream stream) {
 		super.streamRecordStart(stream);
-		execute("streamRecordStart.php", this, stream);
+		execute("publish/streamRecordStart.php", this, stream);
+	}
+	@Override
+	public void streamPlayItemPause(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		execute("play/streamPlayItemPause.php", this, stream, item, position);
+		super.streamPlayItemPause(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemPlay(ISubscriberStream stream, IPlayItem item,
+			boolean isLive) {
+		execute("play/streamPlayItemPlay.php", this, stream, item, isLive);
+		super.streamPlayItemPlay(stream, item, isLive);
+	}
+	@Override
+	public void streamPlayItemResume(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		execute("play/streamPlayItemResume.php", this, stream, item, position);
+		super.streamPlayItemResume(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemSeek(ISubscriberStream stream, IPlayItem item,
+			int position) {
+		execute("play/streamPlayItemSeek.php", this, stream, item, position);
+		super.streamPlayItemSeek(stream, item, position);
+	}
+	@Override
+	public void streamPlayItemStop(ISubscriberStream stream, IPlayItem item) {
+		execute("play/streamPlayItemStop.php", this, stream, item);
+		super.streamPlayItemStop(stream, item);
 	}
 	@Override
 	public void actionPerformed(ActionEvent event) {

@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__FILE__) . "/library/argumentUtil.class.php";
-require_once dirname(__FILE__) . "/library/systemUtil.class.php";
+require_once dirname(__FILE__) . "/../library/argumentUtil.class.php";
+require_once dirname(__FILE__) . "/../library/systemUtil.class.php";
 
 // client disconnect event for Application root.
 SystemUtil::println("appDisconnect");

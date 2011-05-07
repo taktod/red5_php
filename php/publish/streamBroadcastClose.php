@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__FILE__) . "/library/argumentUtil.class.php";
-require_once dirname(__FILE__) . "/library/systemUtil.class.php";
+require_once dirname(__FILE__) . "/../library/argumentUtil.class.php";
+require_once dirname(__FILE__) . "/../library/systemUtil.class.php";
 
 // stream close event.
 SystemUtil::println("streamBroadcastClose");
