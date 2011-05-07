@@ -162,6 +162,7 @@ public class RtmpClientEx extends RTMPClient{
 	}
 	@Override
 	public void connectionOpened(RTMPConnection conn, RTMP state) {
+//		System.out.println(conn.get);
 		super.connectionOpened(conn, state);
 		this.conn = conn;
 		if(listener != null) {

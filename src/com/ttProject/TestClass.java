@@ -9,6 +9,10 @@ import java.io.Serializable;
 
 import org.bouncycastle.util.encoders.Base64;
 */
+import java.util.Properties;
+
+import org.apache.mina.util.ExceptionMonitor;
+
 import com.ttProject.red5.server.adapter.library.edge.RtmpClientEx;
 
 //import com.ttProject.red5.server.adapter.library.RtmpClientEx;
@@ -22,8 +26,13 @@ public class TestClass {
 		new TestClass();
 	}
 	public TestClass() {
+//		Properties prop = System.getProperties();
+//		prop.list(System.out);
+		ExceptionHandler eh = new ExceptionHandler();
+		ExceptionMonitor.setInstance(eh);
 		RtmpClientEx rcex = new RtmpClientEx();
 		rcex.setListener(new RcexListener(rcex));
+		rcex.setExceptionHandler(eh);
 		rcex.connect("localhost", 11935, "live");
 /*		SyncData sdata = new SyncData("aiueo", 135, true);
 		SyncData sdata2;
