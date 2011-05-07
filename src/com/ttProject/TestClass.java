@@ -1,5 +1,5 @@
 package com.ttProject;
-
+/*
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,6 +8,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import org.bouncycastle.util.encoders.Base64;
+*/
+import com.ttProject.red5.server.adapter.library.edge.RtmpClientEx;
 
 //import com.ttProject.red5.server.adapter.library.RtmpClientEx;
 
@@ -20,10 +22,10 @@ public class TestClass {
 		new TestClass();
 	}
 	public TestClass() {
-//		RtmpClientEx rcex = new RtmpClientEx();
-//		rcex.setListener(new RcexListener(rcex));
-//		rcex.connect("localhost", 1935, "live");
-		SyncData sdata = new SyncData("aiueo", 135, true);
+		RtmpClientEx rcex = new RtmpClientEx();
+		rcex.setListener(new RcexListener(rcex));
+		rcex.connect("localhost", 11935, "live");
+/*		SyncData sdata = new SyncData("aiueo", 135, true);
 		SyncData sdata2;
 		try {
 			String data = toString(sdata);
@@ -34,9 +36,9 @@ public class TestClass {
 		catch(IOException e) {
 		}
 		catch(ClassNotFoundException e) {
-		}
+		}*/
 	}
-	private Object fromString(String s) throws IOException, ClassNotFoundException {
+/*	private Object fromString(String s) throws IOException, ClassNotFoundException {
 		byte[] data = Base64.decode(s);
 		ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
 		Object o = ois.readObject();
@@ -49,5 +51,5 @@ public class TestClass {
 		oos.writeObject(o);
 		oos.close();
 		return new String(Base64.encode(baos.toByteArray()));
-	}
+	}*/
 }

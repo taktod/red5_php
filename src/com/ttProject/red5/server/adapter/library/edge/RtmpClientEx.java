@@ -185,30 +185,23 @@ public class RtmpClientEx extends RTMPClient{
 	}
 	@Override
 	public void createStream(IPendingServiceCallback callback) {
-		final RtmpClientEx rcex = this;
-		if(callback == null) {
-			callback = new IPendingServiceCallback() {
-				
-				@Override
-				public void resultReceived(IPendingServiceCall call) {
-					Integer streamIdInt = (Integer)call.getResult();
-					if(conn != null && streamIdInt != null) {
-						NetStream stream = new NetStream();
-						stream.setConnection(conn);
-						rcex.streamId = streamIdInt;
-						stream.setStreamId(streamIdInt);
-						conn.addClientStream(stream);
-						listener.onCreateStream(streamIdInt);
-					}
-				}
-			};
-		}
-		super.createStream(callback);
+		invoke("createStream", new CreateStreamCallback(callback));
 	}
+	/**
+	 * start play with default information.
+	 */
+	public void play(Integer streamId) {
+		play(streamId, name, -2000, -2);
+	}
+	/**
+	 * Netstream for RtmpConnection
+	 * note: for Netstream and CreateStreamCallback, BaseRTMPClientHandler do have the same function for more convinient.
+	 * however, that is not compatible for my program now. therefore, here they are.
+	 */
 	private class NetStream extends AbstractClientStream implements IEventDispatcher {
-
 		@Override
 		public void close() {
+			System.out.println("aaaclose");
 			if(listener != null) {
 				listener.onStreamClose();
 			}
@@ -216,6 +209,7 @@ public class RtmpClientEx extends RTMPClient{
 
 		@Override
 		public void start() {
+			System.out.println("aaastart");
 			if(listener != null) {
 				listener.onStreamStart();
 			}
@@ -223,6 +217,7 @@ public class RtmpClientEx extends RTMPClient{
 
 		@Override
 		public void stop() {
+			System.out.println("aaastop");
 			if(listener != null) {
 				listener.onStreamStop();
 			}
@@ -237,6 +232,30 @@ public class RtmpClientEx extends RTMPClient{
 						listener.onDispatchEvent(rtmpEvent);
 					}
 				}
+			}
+		}
+	}
+	/**
+	 * callback wrapper for createStream
+	 */
+	private class CreateStreamCallback implements IPendingServiceCallback {
+		private IPendingServiceCallback wrapped;
+		public CreateStreamCallback(IPendingServiceCallback wrapped) {
+			this.wrapped = wrapped;
+		}
+		@Override
+		public void resultReceived(IPendingServiceCall call) {
+			Integer streamIdInt = (Integer)call.getResult();
+			if(conn != null && streamIdInt != null) {
+				NetStream stream = new NetStream();
+				stream.setConnection(conn);
+				setStreamId(streamIdInt);
+				stream.setStreamId(streamIdInt);
+				conn.addClientStream(stream);
+				listener.onCreateStream(streamIdInt);
+			}
+			if(wrapped != null) {
+				wrapped.resultReceived(call);
 			}
 		}
 	}
