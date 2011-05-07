@@ -137,7 +137,7 @@ public class RtmpClientEx extends RTMPClient{
 			Map<String, Object> connectionParams,
 			IPendingServiceCallback connectCallback,
 			Object[] connectCallArguments) {
-		super.connect(server, port, connectionParams, connectCallback,
+		super.connect(server, port, connectionParams, new ConnectCallback(connectCallback),
 				connectCallArguments);
 	}
 	@Override
@@ -165,9 +165,9 @@ public class RtmpClientEx extends RTMPClient{
 //		System.out.println(conn.get);
 		super.connectionOpened(conn, state);
 		this.conn = conn;
-		if(listener != null) {
-			listener.onConnect();
-		}
+//		if(listener != null) {
+//			listener.onConnect();
+//		}
 	}
 	@Override
 	public void connectionClosed(RTMPConnection conn, RTMP state) {
@@ -186,12 +186,14 @@ public class RtmpClientEx extends RTMPClient{
 	}
 	@Override
 	public void createStream(IPendingServiceCallback callback) {
-		invoke("createStream", new CreateStreamCallback(callback));
+		invoke("createStream", null, new CreateStreamCallback(callback));
+//		invoke("createStream", new Object[]{conn.getId(), null}, new CreateStreamCallback(callback));
 	}
 	/**
 	 * start play with default information.
 	 */
 	public void play(Integer streamId) {
+//		this.conn.getStreamI
 		play(streamId, name, -2000, -2);
 	}
 	/**
@@ -254,6 +256,27 @@ public class RtmpClientEx extends RTMPClient{
 				stream.setStreamId(streamIdInt);
 				conn.addClientStream(stream);
 				listener.onCreateStream(streamIdInt);
+			}
+			if(wrapped != null) {
+				wrapped.resultReceived(call);
+			}
+		}
+	}
+	/**
+	 * callback wrapper for connect.
+	 */
+	private class ConnectCallback implements IPendingServiceCallback {
+		private IPendingServiceCallback wrapped;
+		public ConnectCallback(IPendingServiceCallback wrapped) {
+			this.wrapped = wrapped;
+		}
+		@Override
+		public void resultReceived(IPendingServiceCall call) {
+			// Check the connect message.
+			if("connect".equals(call.getServiceMethodName())) {
+				if(listener != null) {
+					listener.onConnect();
+				}
 			}
 			if(wrapped != null) {
 				wrapped.resultReceived(call);

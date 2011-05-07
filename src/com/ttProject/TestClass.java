@@ -9,8 +9,6 @@ import java.io.Serializable;
 
 import org.bouncycastle.util.encoders.Base64;
 */
-import java.util.Properties;
-
 import org.apache.mina.util.ExceptionMonitor;
 
 import com.ttProject.red5.server.adapter.library.edge.RtmpClientEx;
