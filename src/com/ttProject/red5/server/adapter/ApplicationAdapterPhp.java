@@ -1,5 +1,7 @@
 package com.ttProject.red5.server.adapter;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import org.red5.server.adapter.ApplicationAdapter;
@@ -22,7 +24,7 @@ import com.ttProject.red5.server.adapter.library.php.ArgumentManager;
 /**
  * Application adapter for PHP usage.
  */
-public class ApplicationAdapterPhp extends ApplicationAdapter {
+public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionListener{
 	private QuercusEx quercus;
 	private String directory;
 	public ApplicationAdapterPhp() {
@@ -205,6 +207,10 @@ public class ApplicationAdapterPhp extends ApplicationAdapter {
 	public void streamRecordStart(IBroadcastStream stream) {
 		super.streamRecordStart(stream);
 		execute("streamRecordStart.php", this, stream);
+	}
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		execute("actionEvent.php", this, event);
 	}
 	protected Object execute(String phpfile, Object ... params) {
 		ArgumentManager args = ArgumentManager.getInstance();
