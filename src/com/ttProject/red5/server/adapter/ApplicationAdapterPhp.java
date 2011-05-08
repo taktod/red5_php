@@ -1,7 +1,5 @@
 package com.ttProject.red5.server.adapter;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import org.red5.server.adapter.ApplicationAdapter;
@@ -25,8 +23,16 @@ import com.ttProject.red5.server.adapter.library.php.ArgumentManager;
 
 /**
  * Application adapter for PHP usage.
+ * Listener用のwrapperを作る必要あり。
+ * IScheduledJob
+ * IConnectionListener
+ * IEventListener
+ * IScopeListener
+ * ISharedObjectListener
+ * IStreamListener
+ * 
  */
-public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionListener{
+public class ApplicationAdapterPhp extends ApplicationAdapter {
 	private QuercusEx quercus;
 	private String directory;
 	public ApplicationAdapterPhp() {
@@ -239,11 +245,7 @@ public class ApplicationAdapterPhp extends ApplicationAdapter implements ActionL
 		execute("play/streamPlayItemStop.php", this, stream, item);
 		super.streamPlayItemStop(stream, item);
 	}
-	@Override
-	public void actionPerformed(ActionEvent event) {
-		execute("actionEvent.php", this, event);
-	}
-	protected Object execute(String phpfile, Object ... params) {
+	public Object execute(String phpfile, Object ... params) {
 		ArgumentManager args = ArgumentManager.getInstance();
 		String key = args.setArgument(params);
 		try {
