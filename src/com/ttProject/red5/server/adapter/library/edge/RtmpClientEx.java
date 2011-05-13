@@ -1,21 +1,18 @@
 package com.ttProject.red5.server.adapter.library.edge;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.red5.server.api.event.IEvent;
 import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
-import org.red5.server.api.stream.IClientStream;
 import org.red5.server.net.rtmp.Channel;
+import org.red5.server.net.rtmp.INetStreamEventHandler;
 import org.red5.server.net.rtmp.RTMPClient;
 import org.red5.server.net.rtmp.RTMPConnection;
 import org.red5.server.net.rtmp.codec.RTMP;
-import org.red5.server.net.rtmp.event.IRTMPEvent;
 import org.red5.server.net.rtmp.event.Notify;
 import org.red5.server.net.rtmp.message.Header;
-import org.red5.server.stream.AbstractClientStream;
-import org.red5.server.stream.IStreamData;
 
 /**
  * Class to connect other rtmp server.
@@ -24,10 +21,18 @@ public class RtmpClientEx extends RTMPClient{
 	private String server;
 	private int port;
 	private String application;
-	private String name;
 	private RTMPConnection conn;
-	private Integer streamId = null;
 	private IRtmpClientEx listener;
+
+	private Object tmplistener;
+	private String name;
+	private MODE mode = null;
+	private enum MODE{
+		Play, Publish;
+	}
+	private Map<String, Integer> streamIds = new ConcurrentHashMap<String, Integer>();
+	// Map to hold IEventDispatcher(play)orINetStreamEventHandler(publish)
+	private Map<String, Object> listeners = new ConcurrentHashMap<String, Object>();
 	
 	public RtmpClientEx() {
 	}
@@ -108,12 +113,6 @@ public class RtmpClientEx extends RTMPClient{
 	public void setListener(IRtmpClientEx listener) {
 		this.listener = listener;
 	}
-	/**
-	 * @param streamId the streamId to set
-	 */
-	public void setStreamId(Integer streamId) {
-		this.streamId = streamId;
-	}
 
 	public void connect() {
 		this.connect(server, port, application);
@@ -151,23 +150,12 @@ public class RtmpClientEx extends RTMPClient{
 	}
 	@Override
 	public void disconnect() {
-		if(conn != null) {
-			IClientStream stream = conn.getStreamById(streamId);
-			if(stream != null) {
-				stream.close();
-				stream = null;
-			}
-		}
 		super.disconnect();
 	}
 	@Override
 	public void connectionOpened(RTMPConnection conn, RTMP state) {
-//		System.out.println(conn.get);
 		super.connectionOpened(conn, state);
 		this.conn = conn;
-//		if(listener != null) {
-//			listener.onConnect();
-//		}
 	}
 	@Override
 	public void connectionClosed(RTMPConnection conn, RTMP state) {
@@ -186,57 +174,48 @@ public class RtmpClientEx extends RTMPClient{
 	}
 	@Override
 	public void createStream(IPendingServiceCallback callback) {
-		invoke("createStream", null, new CreateStreamCallback(callback));
-//		invoke("createStream", new Object[]{conn.getId(), null}, new CreateStreamCallback(callback));
+		super.createStream(new CreateStreamCallback(callback));
 	}
 	/**
 	 * start play with default information.
 	 */
-	public void play(Integer streamId) {
-//		this.conn.getStreamI
-		play(streamId, name, -2000, -2);
+	public boolean play(String name, IEventDispatcher listener) {
+		if(listener == null) {
+			return false;
+		}
+		this.name = name;
+		this.tmplistener = listener;
+		this.mode = MODE.Play;
+		createStream(null);
+		setStreamEventDispatcher(listener);
+		return true;
 	}
 	/**
-	 * Netstream for RtmpConnection
-	 * note: for Netstream and CreateStreamCallback, BaseRTMPClientHandler do have the same function for more convinient.
-	 * however, that is not compatible for my program now. therefore, here they are.
+	 * start publish with default information.
 	 */
-	private class NetStream extends AbstractClientStream implements IEventDispatcher {
-		@Override
-		public void close() {
-			System.out.println("aaaclose");
-			if(listener != null) {
-				listener.onStreamClose();
-			}
+	public boolean publish(String name, INetStreamEventHandler listener) {
+		this.name = name;
+		this.tmplistener = listener;
+		this.mode = MODE.Publish;
+		createStream(null);
+		return true;
+	}
+	private void startMediaStream(Integer streamId) {
+		switch(mode) {
+		case Play:
+			play(streamId, name, -2000, -2);
+			break;
+		case Publish:
+			publish(streamId, name, "live", (INetStreamEventHandler)tmplistener);
+			break;
+		default:
+			return;
 		}
-
-		@Override
-		public void start() {
-			System.out.println("aaastart");
-			if(listener != null) {
-				listener.onStreamStart();
-			}
-		}
-
-		@Override
-		public void stop() {
-			System.out.println("aaastop");
-			if(listener != null) {
-				listener.onStreamStop();
-			}
-		}
-
-		@Override
-		public void dispatchEvent(IEvent event) {
-			if(event instanceof IRTMPEvent && event instanceof IStreamData) {
-				IRTMPEvent rtmpEvent = (IRTMPEvent)event;
-				if(rtmpEvent.getHeader().getSize() != 0) {
-					if(listener != null) {
-						listener.onDispatchEvent(rtmpEvent);
-					}
-				}
-			}
-		}
+		streamIds.put(name, streamId);
+		listeners.put(streamId.toString(), tmplistener);
+		name = null;
+		tmplistener = null;
+		mode = null;
 	}
 	/**
 	 * callback wrapper for createStream
@@ -250,11 +229,7 @@ public class RtmpClientEx extends RTMPClient{
 		public void resultReceived(IPendingServiceCall call) {
 			Integer streamIdInt = (Integer)call.getResult();
 			if(conn != null && streamIdInt != null) {
-				NetStream stream = new NetStream();
-				stream.setConnection(conn);
-				setStreamId(streamIdInt);
-				stream.setStreamId(streamIdInt);
-				conn.addClientStream(stream);
+				startMediaStream(streamIdInt);
 				listener.onCreateStream(streamIdInt);
 			}
 			if(wrapped != null) {
