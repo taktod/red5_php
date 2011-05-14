@@ -6,13 +6,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
+import org.red5.server.api.service.IServiceCall;
 import org.red5.server.net.rtmp.Channel;
 import org.red5.server.net.rtmp.INetStreamEventHandler;
 import org.red5.server.net.rtmp.RTMPClient;
 import org.red5.server.net.rtmp.RTMPConnection;
 import org.red5.server.net.rtmp.codec.RTMP;
+import org.red5.server.net.rtmp.event.Invoke;
 import org.red5.server.net.rtmp.event.Notify;
 import org.red5.server.net.rtmp.message.Header;
+import org.red5.server.service.Call;
 
 /**
  * Class to connect other rtmp server.
@@ -43,26 +46,25 @@ public class RtmpClientEx extends RTMPClient{
 	 * @param name
 	 * @param listener
 	 */
-	public RtmpClientEx(String server, int port, String application, String name,
+	public RtmpClientEx(String server, int port, String application, 
 			IRtmpClientEx listener) {
 		super();
 		this.server = server;
 		this.port = port;
 		this.application = application;
-		this.name = name;
 		this.listener = listener;
 	}
 	/**
 	 * @return the host
 	 */
-	public String getHost() {
+	public String getServer() {
 		return server;
 	}
 	/**
-	 * @param host the host to set
+	 * @param server the host to set
 	 */
-	public void setHost(String host) {
-		this.server = host;
+	public void setServer(String server) {
+		this.server = server;
 	}
 	/**
 	 * @return the port
@@ -90,18 +92,6 @@ public class RtmpClientEx extends RTMPClient{
 		this.application = application;
 	}
 	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-	/**
-	 * @param name the name to set
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-	/**
 	 * @return the listener
 	 */
 	public IRtmpClientEx getListener() {
@@ -112,6 +102,13 @@ public class RtmpClientEx extends RTMPClient{
 	 */
 	public void setListener(IRtmpClientEx listener) {
 		this.listener = listener;
+	}
+	/**
+	 * @param name the name on streamId set
+	 * @return streamId
+	 */
+	public Integer getStreamId(String name) {
+		return streamIds.get(name);
 	}
 
 	public void connect() {
@@ -165,12 +162,32 @@ public class RtmpClientEx extends RTMPClient{
 		super.connectionClosed(conn, state);
 	}
 	@Override
-	protected void onInvoke(RTMPConnection conn, Channel channel, Header header,
-			Notify notify, RTMP rtmp) {
-		super.onInvoke(conn, channel, header, notify, rtmp);
+	protected void onInvoke(RTMPConnection conn, Channel channel, Header source,
+			Notify invoke, RTMP rtmp) {
+		IServiceCall call = invoke.getCall();
+		String methodName = call.getServiceMethodName();
+		Object result = null;
 		if(listener != null) {
-			listener.onInvoke(notify.getCall());
+			result = listener.onInvoke(call);
 		}
+		if ("_result".equals(methodName) || "_error".equals(methodName)
+				|| "onStatus".equals(methodName) || !(call instanceof IPendingServiceCall)) {
+			super.onInvoke(conn, channel, source, invoke, rtmp);
+			return;
+		}
+		IPendingServiceCall pscall = (IPendingServiceCall)call;
+		if(result == null) {
+			call.setStatus(Call.STATUS_METHOD_NOT_FOUND);
+		}
+		else {
+			call.setStatus(Call.STATUS_SUCCESS_RESULT);
+		}
+		pscall.setResult(result);
+		Invoke reply = new Invoke();
+		reply.setHeader(source);
+		reply.setCall(pscall);
+		reply.setInvokeId(invoke.getInvokeId());
+		channel.write(reply);
 	}
 	@Override
 	public void createStream(IPendingServiceCallback callback) {

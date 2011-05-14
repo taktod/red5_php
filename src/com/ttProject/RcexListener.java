@@ -30,10 +30,11 @@ public class RcexListener implements IRtmpClientEx, IEventDispatcher {
 	}
 
 	@Override
-	public void onInvoke(IServiceCall call) {
+	public Object onInvoke(IServiceCall call) {
 		System.out.println("invoke");
 		System.out.println("func: " + call.getServiceMethodName());
 		System.out.println("message: " + call.getArguments()[0].toString());
+		return null;
 	}
 	@Override
 	public void dispatchEvent(IEvent event) {
