@@ -16,7 +16,7 @@ public class RcexListener implements IRtmpClientEx, IEventDispatcher {
 	@Override
 	public void onConnect() {
 		System.out.println("connect");
-		rcex.createStream(null);
+		rcex.play("test", this);
 	}
 	@Override
 	public void onDisconnect() {
@@ -26,14 +26,12 @@ public class RcexListener implements IRtmpClientEx, IEventDispatcher {
 	@Override
 	public void onCreateStream(Integer streamId) {
 		System.out.println("createStream" + streamId);
-		rcex.play(streamId, "135", -2000, -2);
 	}
 
 	@Override
 	public Object onInvoke(IServiceCall call) {
 		System.out.println("invoke");
 		System.out.println("func: " + call.getServiceMethodName());
-		System.out.println("message: " + call.getArguments()[0].toString());
 		return null;
 	}
 	@Override

@@ -1,8 +1,12 @@
 package com.ttProject.red5.server.adapter.library.edge;
 
+import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.mina.core.future.IoFuture;
+import org.apache.mina.core.future.IoFutureListener;
+import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.red5.server.api.event.IEventDispatcher;
 import org.red5.server.api.service.IPendingServiceCall;
 import org.red5.server.api.service.IPendingServiceCallback;
@@ -10,6 +14,7 @@ import org.red5.server.api.service.IServiceCall;
 import org.red5.server.net.rtmp.Channel;
 import org.red5.server.net.rtmp.INetStreamEventHandler;
 import org.red5.server.net.rtmp.RTMPClient;
+import org.red5.server.net.rtmp.RTMPClientConnManager;
 import org.red5.server.net.rtmp.RTMPConnection;
 import org.red5.server.net.rtmp.codec.RTMP;
 import org.red5.server.net.rtmp.event.Invoke;
@@ -37,7 +42,14 @@ public class RtmpClientEx extends RTMPClient{
 	// Map to hold IEventDispatcher(play)orINetStreamEventHandler(publish)
 	private Map<String, Object> listeners = new ConcurrentHashMap<String, Object>();
 	
+	private final RTMPMinaIoHandlerEx ioHandler;
+	
 	public RtmpClientEx() {
+		ioHandler = new RTMPMinaIoHandlerEx();
+		ioHandler.setCodecFactory(getCodecFactory());
+		ioHandler.setMode(RTMP.MODE_CLIENT);
+		ioHandler.setHandler(this);
+		ioHandler.setRtmpConnManager(RTMPClientConnManager.getInstance());
 	}
 	/**
 	 * @param server
@@ -48,7 +60,7 @@ public class RtmpClientEx extends RTMPClient{
 	 */
 	public RtmpClientEx(String server, int port, String application, 
 			IRtmpClientEx listener) {
-		super();
+		this();
 		this.server = server;
 		this.port = port;
 		this.application = application;
@@ -133,6 +145,9 @@ public class RtmpClientEx extends RTMPClient{
 			Map<String, Object> connectionParams,
 			IPendingServiceCallback connectCallback,
 			Object[] connectCallArguments) {
+		this.server = server;
+		this.port = port;
+		this.application = (String)connectionParams.get("app");
 		super.connect(server, port, connectionParams, new ConnectCallback(connectCallback),
 				connectCallArguments);
 	}
@@ -146,8 +161,22 @@ public class RtmpClientEx extends RTMPClient{
 		this.connect(server, port, makeDefaultConnectionParams(server, port, application), connectCallback, null);
 	}
 	@Override
-	public void disconnect() {
-		super.disconnect();
+	protected void startConnector(String server, int port) {
+		// make original connection with RTMPMinaIoHandlerEx
+		socketConnector = new NioSocketConnector();
+		socketConnector.setHandler(ioHandler);
+		future = socketConnector.connect(new InetSocketAddress(server, port));
+		future.addListener(new IoFutureListener<IoFuture>() {
+			public void operationComplete(IoFuture future) {
+				try {
+					future.getSession();
+				}
+				catch(Exception e) {
+					handleException(e);
+				}
+			};
+		});
+		future.awaitUninterruptibly(CONNECTOR_WORKER_TIMEOUT);
 	}
 	@Override
 	public void connectionOpened(RTMPConnection conn, RTMP state) {
