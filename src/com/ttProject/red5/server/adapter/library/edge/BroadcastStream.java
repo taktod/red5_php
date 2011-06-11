@@ -25,8 +25,10 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.apache.mina.core.buffer.IoBuffer;
 import org.red5.server.api.IScope;
 import org.red5.server.api.event.IEvent;
+import org.red5.server.api.stream.IAudioStreamCodec;
 import org.red5.server.api.stream.IBroadcastStream;
 import org.red5.server.api.stream.IStreamCodecInfo;
 import org.red5.server.api.stream.IStreamListener;
@@ -35,6 +37,7 @@ import org.red5.server.api.stream.IVideoStreamCodec;
 import org.red5.server.api.stream.ResourceExistException;
 import org.red5.server.api.stream.ResourceNotFoundException;
 import org.red5.server.messaging.IMessageComponent;
+//import org.red5.server.messaging.IMessageOutput;
 import org.red5.server.messaging.IPipe;
 import org.red5.server.messaging.IPipeConnectionListener;
 import org.red5.server.messaging.IProvider;
@@ -42,12 +45,18 @@ import org.red5.server.messaging.OOBControlMessage;
 import org.red5.server.messaging.PipeConnectionEvent;
 import org.red5.server.net.rtmp.event.AudioData;
 import org.red5.server.net.rtmp.event.IRTMPEvent;
+import org.red5.server.net.rtmp.event.Invoke;
 import org.red5.server.net.rtmp.event.Notify;
 import org.red5.server.net.rtmp.event.VideoData;
 import org.red5.server.net.rtmp.status.Status;
+import org.red5.server.net.rtmp.status.StatusCodes;
+import org.red5.server.stream.AbstractStream;
+import org.red5.server.stream.AudioCodecFactory;
 import org.red5.server.stream.BroadcastScope;
 import org.red5.server.stream.IBroadcastScope;
+//import org.red5.server.stream.IConsumerService;
 import org.red5.server.stream.IProviderService;
+import org.red5.server.stream.IStreamData;
 import org.red5.server.stream.VideoCodecFactory;
 import org.red5.server.stream.codec.StreamCodecInfo;
 import org.red5.server.stream.message.RTMPMessage;
@@ -63,30 +72,44 @@ import org.slf4j.LoggerFactory;
  * {@link AudioTranscoderDemo} for an example of this in action.
  * 
  */
-public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnectionListener
+public class BroadcastStream extends AbstractStream implements IBroadcastStream, IProvider, IPipeConnectionListener
 {
 	/** Listeners to get notified about received packets. */
-	private Set<IStreamListener> mListeners = new CopyOnWriteArraySet<IStreamListener>();
+	private Set<IStreamListener> listeners = new CopyOnWriteArraySet<IStreamListener>();
 	final private Logger log = LoggerFactory.getLogger(this.getClass());
 
-	private String mPublishedName;
-	private IPipe mLivePipe;
-	private IScope mScope;
+	private String publishedName;
+	private IPipe livePipe;
+	private IScope scope;
 
 	// Codec handling stuff for frame dropping
 	private StreamCodecInfo mCodecInfo;
-	private Long mCreationTime;
+
+	/** is there need to check video codec? */
+	protected boolean checkVideoCodec = false;
+	/** is there need to check audio codec? */
+	protected boolean checkAudioCodec = false; // this need to be checked for FME
+	/** total number of bytes received */
+	protected long bytesReceived;
+	/** is this stream still active? */
+	protected volatile boolean closed;
+	/** is there need to send start notification? */
+	protected boolean sendStartNotification = true;
+	/** Stores timestamp of first packet */
+	protected long firstPacketTime = -1;
+	
+	protected long latestTimeStamp = -1;
 
 	public BroadcastStream(String name)
 	{
-		mPublishedName = name;
-		mLivePipe = null;
+		publishedName = name;
+		livePipe = null;
 		log.trace("name: {}", name);
 
 		// we want to create a video codec when we get our
 		// first video packet.
 		mCodecInfo = new StreamCodecInfo();
-		mCreationTime = null;
+		creationTime = 0L;
 	}
 
 	@Override
@@ -100,7 +123,7 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 	public String getPublishedName()
 	{
 		log.trace("getPublishedName()");
-		return mPublishedName;
+		return publishedName;
 	}
 
 	@Override
@@ -114,21 +137,21 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 	public void addStreamListener(IStreamListener listener)
 	{
 		log.trace("addStreamListener(listener: {})", listener);
-		mListeners.add(listener);
+		listeners.add(listener);
 	}
 
 	@Override
 	public Collection<IStreamListener> getStreamListeners()
 	{
 		log.trace("getStreamListeners()");
-		return mListeners;
+		return listeners;
 	}
 
 	@Override
 	public void removeStreamListener(IStreamListener listener)
 	{
 		log.trace("removeStreamListener({})", listener);
-		mListeners.remove(listener);
+		listeners.remove(listener);
 	}
 
 	@Override
@@ -143,25 +166,35 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 	public void setPublishedName(String name)
 	{
 		log.trace("setPublishedName(name:{})", name);
-		mPublishedName = name;
+		publishedName = name;
 	}
 
 	@Override
 	public void close()
 	{
-		log.trace("close");
+		// check active
+		if(closed) {
+			return;
+		}
+		closed = true;
+		if(livePipe != null) {
+			livePipe.unsubscribe((IProvider)this);
+		}
+//		sendPublishStopNotify();
+//		connMsgOut.unsubscribe(this);// this may be for clientStream
+//		notifyBroadcastClose();
 	}
 	public void terminateGhostConnection() {
-		if(mLivePipe.getConsumers().size() != 0) {
+		if(livePipe.getConsumers().size() != 0) {
 			// まだつながっているユーザーが存在するため、このままおいておく。
-			System.out.println(mLivePipe.getConsumers().size());
+			System.out.println(livePipe.getConsumers().size());
 			return;
 		}
 		// 誰も接続していないので、データを削除する。
-		IProviderService providerService = (IProviderService)mScope.getContext().getBean(IProviderService.BEAN_NAME);
-		IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(mScope, mPublishedName, true);
+		IProviderService providerService = (IProviderService)scope.getContext().getBean(IProviderService.BEAN_NAME);
+		IBroadcastScope bsScope = (BroadcastScope) providerService.getLiveProviderInput(scope, publishedName, true);
 		bsScope.removeAttribute(IBroadcastScope.STREAM_ATTRIBUTE);
-		providerService.unregisterBroadcastStream(mScope, mPublishedName);
+		providerService.unregisterBroadcastStream(scope, publishedName);
 		System.out.println(providerService);
 
 		log.trace("close()");
@@ -178,36 +211,60 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 	@Override
 	public String getName()
 	{
-		log.trace("getName(): {}", mPublishedName);
+		log.trace("getName(): {}", publishedName);
 		// for now, just return the published name
-		return mPublishedName;
+		return publishedName;
 	}
 
 	public void setScope(IScope scope)
 	{
-		mScope = scope;
+		this.scope = scope;
 	}
 
 	@Override
 	public IScope getScope()
 	{
-		log.trace("getScope(): {}", mScope);
-		return mScope;
+		log.trace("getScope(): {}", scope);
+		return scope;
 	}
 
-	@Override
+/*	@Override
 	public void start()
 	{
-		Status status = new Status(Status.NS_PLAY_PUBLISHNOTIFY);
+		closed = false;
+		Status status = new Status(StatusCodes.NS_PLAY_PUBLISHNOTIFY);
 		StatusMessage smessage = new StatusMessage();
 		smessage.setBody(status);
 		try {
-			mLivePipe.pushMessage(smessage);
+			livePipe.pushMessage(smessage);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 //		this.mLivePipe.subscribe(getProvider(), new HashMap<String, Object>() {{put("play", "start");}});
 		log.trace("start()");
+	}*/
+	@Override
+	public void start() {
+//		IConsumerService consumerManager = (IConsumerService) getScope().getContext().getBean(IConsumerService.KEY);
+		checkVideoCodec = true;
+		firstPacketTime = -1;
+		latestTimeStamp = -1;
+		// this is for clientStream
+//		connMsgOut = consumerManager.getConsumerOutput(this);
+//		connMsgOut.subscribe(this, null);
+		setCodecInfo(new StreamCodecInfo());
+		closed = false;
+		bytesReceived = 0;
+		creationTime = System.currentTimeMillis();
+		// こっちのnotifyははじめのpacketデータを取得してそこで送るべき
+		Status status = new Status(StatusCodes.NS_PLAY_PUBLISHNOTIFY);
+		StatusMessage smessage = new StatusMessage();
+		smessage.setBody(status);
+		try {
+			livePipe.pushMessage(smessage);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -216,12 +273,12 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 		// unscribeを送る。(とめることはできるが、始めることができない。)
 //		this.mLivePipe.unsubscribe(this.getProvider());
       
-		// notifyを送る。
-		Status status = new Status(Status.NS_PLAY_UNPUBLISHNOTIFY);
+		// notifyを送る。(Notifyはcloseで送るべき)
+		Status status = new Status(StatusCodes.NS_PLAY_UNPUBLISHNOTIFY);
 		StatusMessage smessage = new StatusMessage();
 		smessage.setBody(status);
 		try {
-			mLivePipe.pushMessage(smessage);
+			livePipe.pushMessage(smessage);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -249,14 +306,15 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 			if (event.getProvider() == this
 				&& (event.getParamMap() == null || !event.getParamMap().containsKey("record")))
 			{
-				this.mLivePipe = (IPipe) event.getSource();
+				this.livePipe = (IPipe) event.getSource();
 			}
 			break;
 		case PipeConnectionEvent.PROVIDER_DISCONNECT:
-			if (this.mLivePipe == event.getSource())
+			if (this.livePipe == event.getSource())
 			{
 				// これでunpublishedがいくようになった？
-				this.mLivePipe.unsubscribe(this.getProvider());
+				this.livePipe = null;
+//				this.livePipe.unsubscribe(this.getProvider());
 			}
 			break;
 		case PipeConnectionEvent.CONSUMER_CONNECT_PUSH:
@@ -269,7 +327,7 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 			break;
 		}
 	}
-
+/*
 	public void dispatchEvent(IEvent event)
 	{
 		try {
@@ -338,17 +396,148 @@ public class BroadcastStream implements IBroadcastStream, IProvider, IPipeConnec
 			}
 		} finally {
 		}
+	}*/
+	public void dispatchEvent(IEvent event) {
+		if(!(event instanceof IRTMPEvent) && (event.getType() != IEvent.Type.STREAM_CONTROL) && (event.getType() != IEvent.Type.STREAM_DATA) || closed) {
+			log.debug("dispatchEvent: {}", event.getType());
+			return;
+		}
+		// get stream codec
+		IStreamCodecInfo codecInfo = getCodecInfo();
+		StreamCodecInfo info = null;
+		if(codecInfo instanceof StreamCodecInfo) {
+			info = (StreamCodecInfo) codecInfo;
+		}
+		// create the event
+		IRTMPEvent rtmpEvent;
+		try {
+			rtmpEvent = (IRTMPEvent)event;
+		}
+		catch(ClassCastException e) {
+			log.error("Class cast exception in event dispatch", e);
+			return;
+		}
+		int eventTime = -1;
+		IoBuffer buf = null;
+		if(rtmpEvent instanceof IStreamData && (buf = ((IStreamData<?>)rtmpEvent).getData()) != null) {
+			bytesReceived += buf.limit();
+		}
+		if(rtmpEvent instanceof AudioData) {
+			// splitmediaLabs - begin AAC fix
+			IAudioStreamCodec audioStreamCodec = null;
+			if(checkAudioCodec) {
+				audioStreamCodec = AudioCodecFactory.getAudioCodec(buf);
+				if(info != null) {
+					info.setAudioCodec(audioStreamCodec);
+				}
+				checkAudioCodec = false;
+			}
+			else if(codecInfo != null) {
+				audioStreamCodec = codecInfo.getAudioCodec();
+			}
+			if(audioStreamCodec != null) {
+				audioStreamCodec.addData(buf.asReadOnlyBuffer());
+			}
+			if(info != null) {
+				info.setHasAudio(true);
+			}
+			eventTime = rtmpEvent.getTimestamp();
+		}
+		else if(rtmpEvent instanceof VideoData) {
+			IVideoStreamCodec videoStreamCodec = null;
+			if(checkVideoCodec) {
+				videoStreamCodec = VideoCodecFactory.getVideoCodec(buf);
+				if(info != null) {
+					info.setVideoCodec(videoStreamCodec);
+				}
+				checkVideoCodec = false;
+			}
+			else if(codecInfo != null) {
+				videoStreamCodec = codecInfo.getVideoCodec();
+			}
+			if(videoStreamCodec != null) {
+				videoStreamCodec.addData(buf.asReadOnlyBuffer());
+			}
+			if(info != null) {
+				info.setHasVideo(true);
+			}
+			eventTime = rtmpEvent.getTimestamp();
+		}
+		else if (rtmpEvent instanceof Invoke) {
+			eventTime = rtmpEvent.getTimestamp();
+			return;
+		}
+		else if(rtmpEvent instanceof Notify) {
+			Notify notifyEvent = (Notify) rtmpEvent;
+			if(metaData == null && notifyEvent.getHeader().getDataType() == Notify.TYPE_STREAM_METADATA) {
+				try {
+					metaData = notifyEvent.duplicate();
+				}
+				catch (Exception e) {
+					log.warn("Metadata could not be duplicated for this stream.", e);
+				}
+			}
+			eventTime = rtmpEvent.getTimestamp();
+		}
+		if(eventTime > latestTimeStamp) {
+			latestTimeStamp = eventTime;
+		}
+//		checkSendNotifications(event); // this is the notification for client player's publish
+		try {
+			if(livePipe != null) {
+				RTMPMessage msg = RTMPMessage.build(rtmpEvent, eventTime);
+				livePipe.pushMessage(msg);
+			}
+		} catch (IOException e) {
+			stop();
+		}
+		if(rtmpEvent instanceof IStreamPacket) {
+			for(IStreamListener listener : getStreamListeners()) {
+				try {
+					listener.packetReceived(this, (IStreamPacket)rtmpEvent);
+				}
+				catch (Exception e) {
+					log.error("Error while notifying listener {}", listener, e);
+				}
+			}
+		}
 	}
-
+/*	private void checkSendNotifications(IEvent event) {
+		IEventListener source = event.getSource();
+		sendStartNotifications(source);
+	}*/
+/*	private void sendStartNotifications(IEventListener source) {
+		if(sendStartNotification) {
+			sendStartNotification = false;
+			if(source instanceof IConnection) {
+				IScope scope = ((IConnection) source).getScope();
+				if(scope.hasHandler()) {
+					Object handler = scope.getHandler();
+					if(handler instanceof IStreamAwareScopeHandler) {
+						((IStreamAwareScopeHandler) handler).streamPublishStart(this);
+					}
+				}
+			}
+			sendPublishStartNotify();
+			notifyBroadcastStart();
+		}
+	}*/
+/*	private void sendPublishStartNotify() {
+		Status publishStatus = new Status(StatusCodes.NS_PUBLISH_START);
+		publishStatus.setClientid()
+	}*/
 	@Override
 	public long getCreationTime()
 	{
-		return mCreationTime != null ? mCreationTime : 0L;
+		return creationTime;
 	}
 
 	@Override
 	public Notify getMetaData()
 	{
 		return null;
+	}
+	public long getBytesReceived() {
+		return bytesReceived;
 	}
 }
